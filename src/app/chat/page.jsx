@@ -27,24 +27,38 @@ export default function Page() {
   }, [allMsg]);
 
   // fetch messages + init socket
-  useEffect(() => {
-    (async () => {
-      await axios.post("/api/user");
-      const response = await axios.get("/api/message");
-      setMessage(response.data);
-    })();
+  // fetch messages + init socket
+ useEffect(() => {
+   (async () => {
+     try {
+       await axios.post("/api/user");
+       const response = await axios.get("/api/message");
+       // ✅ Ensure response.data is an array before setting state
+       if (Array.isArray(response.data)) {
+         setMessage(response.data);
+       } else {
+         // If not an array, set to an empty array to prevent crash
+         setMessage([]);
+         console.warn("API response was not an array:", response.data);
+       }
+     } catch (error) {
+       console.error("Failed to fetch messages:", error);
+       setMessage([]); // Also handle errors by setting an empty array
+     }
+   })();
 
-    socketRef.current = io(); // adjust server URL if needed
-    const socket = socketRef.current;
+   socketRef.current = io(); // adjust server URL if needed
+   const socket = socketRef.current;
 
-    socket.on("newMessage", (data) => {
-      setMessage((prev) => [...prev, data]);
-    });
+   socket.on("newMessage", (data) => {
+     // Ensure previous state is an array before spreading
+     setMessage((prev) => (Array.isArray(prev) ? [...prev, data] : [data]));
+   });
 
-    return () => {
-      socket?.disconnect();
-    };
-  }, []);
+   return () => {
+     socket?.disconnect();
+   };
+ }, []);
 
   // derive formatted messages
   const formattedMessages = useMemo(() => {
