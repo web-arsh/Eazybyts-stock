@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 
 export const dbConnect = async () =>{
     try {
-        await connect(process.env.URL ?? "",{
+        await connect(process.env.DB ?? "",{
             dbName: "Stock"
         });
     } catch (error) {
