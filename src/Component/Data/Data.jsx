@@ -1,3 +1,5 @@
+"use client";
+
 import gql from "graphql-tag";
 import StockBarChart from "../Bar/Bar";
 import Heading from "../Heading/Heading";
@@ -6,6 +8,7 @@ import StockPieChart from "../Pie/Pie";
 import createApolloClient from "@/libs/ApolloClient";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const companyInfo = gql`
   query Query($name: String!) {
@@ -37,16 +40,33 @@ const companyInfo = gql`
   }
 `;
 
-export default async function StockData({ name }) {
-  const apolloClient = createApolloClient();
+export default function StockData({ name }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
-  const { data, error } = await apolloClient.query({
-    query: companyInfo,
-    variables: { name },
-  });
+  useEffect(() => {
+    const fetchData = async () => {
+      const apolloClient = createApolloClient();
+      try {
+        const { data } = await apolloClient.query({
+          query: companyInfo,
+          variables: { name },
+        });
+        setData(data);
+      } catch (err) {
+        setError(err);
+        console.error("GraphQL Error:", err);
+      }
+    };
+    fetchData();
+  }, [name]);
 
   if (error) {
-    console.error("GraphQL Error:", error);
+    return <div>Error loading data.</div>;
+  }
+
+  if (!data) {
+    return <div>Loading...</div>;
   }
 
   const currentPrice = {
